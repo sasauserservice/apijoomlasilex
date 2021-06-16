@@ -1,0 +1,6 @@
+{
+    "require": {
+        "silex/silex": "~2.0",
+        "hallboav/silex-jwt-security": "^1.1"
+    }
+}
