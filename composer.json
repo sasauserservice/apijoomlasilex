@@ -1,6 +1,7 @@
 {
     "require": {
         "silex/silex": "~2.0",
-        "hallboav/silex-jwt-security": "^1.1"
+        "hallboav/silex-jwt-security": "^1.1",
+        "firebase/php-jwt": "^5.3"
     }
 }
