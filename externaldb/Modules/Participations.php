@@ -53,13 +53,22 @@ $extdb->get('/participations', function(Request $req) use($database, $dbo){
         return new Response(json_encode($rs));
     } else {
 
-        header("Content-Type: text/html; charset=UTF-8");
-
         $entry = \Helper\EntryTo($datos_usuario['serial'], $datos_usuario['id']);
 
-        var_dump($entry);
+        $rs = array();
+        foreach($entry as $i => $row) {
+            $fila = $row;
+            $status = Status::getStatusParticipation($fila['id']);
+            $fila['event_id'] = strval($fila['event_id']);
+            $fila['category_id'] = strval($fila['category_id']);
+            //$fila['category_title'] = $dbo->setQuery("SELECT title from #__match_core_categories where id = '{$row['category_id']}'")->loadResult();
+            //$fila['event_title'] = $dbo->setQuery("SELECT title from #__content where id = '{$row['event_id']}'")->loadResult();
+            $fila['status'] = ($status == false) ? ["entryid" => $fila['id'], "status" => 0] : $status;
+
+            array_push($rs, $fila);
+        }
         
-        return '';
+        return new Response(json_encode($rs));
     }
 });
 

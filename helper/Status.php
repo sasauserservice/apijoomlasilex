@@ -81,8 +81,11 @@ class Status
         SELECT * FROM sasa_match_status_entries AS stpar WHERE entryid = '{$id}';
         SQL;
         $rs = $database->query($query);
-        $rs->setFetchMode(\PDO::FETCH_ASSOC);
-        $rsfetch = $rs->fetch();
+        $rsfetch = array();
+        if(!is_null($rs)){
+            $rs->setFetchMode(\PDO::FETCH_ASSOC);
+            $rsfetch = $rs->fetch();
+        }        
         return $rsfetch;
     }
 

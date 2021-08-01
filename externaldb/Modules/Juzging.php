@@ -1107,6 +1107,7 @@ $juzging->get('/judgeasigmentsbyentry/{entry}', function(Request $req, $entry) u
 
     $datos_usuario = Extended::getUserByEmail($validate->data->email);
     $juezid = (int) $datos_usuario['id'];
+    $juezserial = $datos_usuario['serial'];
 
     $authmodel = new Auth;
     $isManager = $authmodel->userJoomlaManager($juezid);
@@ -1141,13 +1142,13 @@ $juzging->get('/judgeasigmentsbyentry/{entry}', function(Request $req, $entry) u
         where 
             panelcat.categoryid = '{$datos_entry_result->category_id}' 
             and pevent.event = '{$datos_entry_result->event_id}'
-            and (each_general->>'general')::int = '{$juezid}'
+            and (each_general->>'general') like '%{$juezserial}'
         group by parameterofi.id, each_general->>'id';
         SQL;
 
         $datos_panel_result = $dbo->setQuery($datos_panel_sql)->loadObjectList();
         if(is_null($datos_panel_result)){
-            return new Response(json_encode(['ERROR INTERNO']), 500);
+            return new Response(json_encode(['ERROR INTERNO1']), 500);
         }
     
         #datos para jueces tipo penalties.
@@ -1163,11 +1164,12 @@ $juzging->get('/judgeasigmentsbyentry/{entry}', function(Request $req, $entry) u
         cross join json_array_elements(panel.penaltyjudge) as each_penal
         cross join json_array_elements(each_penal->'params') as each_penalty
         left join sasa_match_core_parameters_penalty as penalties on penalties.id = (each_penalty->>'id')::int
-        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_penal->>'penalty')::int = '{$juezid}'
+        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_penal->>'penalty') like '%{$juezserial}'
         SQL;
+        
         $datos_panel_penal_result = $dbo->setQuery($datos_panel_penal_sql)->loadObjectList();
         if(is_null($datos_panel_penal_result)){
-            return new Response(json_encode(['ERROR INTERNO']), 500);
+            return new Response(json_encode(['ERROR INTERNO2']), 500);
         }
     
         #datos para juezmain.
@@ -1177,28 +1179,25 @@ $juzging->get('/judgeasigmentsbyentry/{entry}', function(Request $req, $entry) u
         from sasa_match_core_panels_categories as panelcat 
         left join sasa_match_core_panels as panel on panel.id = panelcat.panelid
         cross join json_array_elements(panel.mainjudge) as each_main
-        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_main->>'user')::int = '{$juezid}'
+        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_main->>'user') like '%{$juezserial}'
         SQL;
         $datos_panel_main_result = $dbo->setQuery($datos_panel_main_sql)->loadObjectList();
         if(is_null($datos_panel_main_result)){
-            return new Response(json_encode(['ERROR INTERNO']), 500);
+            return new Response(json_encode(['ERROR INTERNO3']), 500);
         }
 
-        #datos para el atleta
+        #datos para el atleta        
         $datos_panel_athlete = <<<SQL
-        select 
-        parti.*
-        from sasa_match_competitor as comp
-        left join sasa_match_users as usr
-        on usr.id = any(comp.manager)
-        left join sasa_match_modules_participations as parti
-        on parti.partipant_id = comp.id
-        where usr.id = {$juezid} and parti.id = '{$entry}';
+        select parti.* from sasa_match_competitor as comp left join sasa_match_users as usr 
+        on usr.serial = any(comp.manager::uuid[]) 
+        left join sasa_match_modules_participations as parti 
+        on parti.partipant_id = comp.id 
+        where usr.id = '{$juezid}' and parti.id = '{$entry}';
         SQL;
 
         $datos_panel_athlete_query = $database->query($datos_panel_athlete);
         if(is_null($datos_panel_athlete_query)){
-            return new Response(json_encode(['ERROR INTERNO']), 500); 
+            return new Response(json_encode(['ERROR INTERNO4']), 500); 
         }
 
         $datos_panel_athlete_query->setFetchMode(PDO::FETCH_ASSOC);
@@ -1263,6 +1262,7 @@ $juzging->get('/asigmentsToJudge/general/{entry}', function(Request $request, $e
 
     $datos_usuario = Extended::getUserByEmail($validate->data->email);
     $juezid = (int) $datos_usuario['id'];
+    $juezserial = $datos_usuario['serial'];
 
     $datos_entry_sql = <<<SQL
     SELECT par.id, par.category_id, par.created_by, par.data->>'video_url' as video,  par.partipant_id, par.event_id FROM sasa_match_modules_participations as par where par.id = '{$entry}';
@@ -1297,7 +1297,7 @@ $juzging->get('/asigmentsToJudge/general/{entry}', function(Request $request, $e
         where 
             panelcat.categoryid = '{$datos_entry_result->category_id}' 
             and pevent.event = '{$datos_entry_result->event_id}'
-            and (each_general->>'general')::int = '{$juezid}'
+            and (each_general->>'general') = '{$juezserial}'
         group by parameterofi.id, each_general->>'id';
         SQL;
     } else {
@@ -1436,6 +1436,7 @@ $juzging->get('/asigmentsToJudge/penalty/{entry}', function(Request $request, $e
 
     $datos_usuario = Extended::getUserByEmail($validate->data->email);
     $juezid = (int) $datos_usuario['id'];
+    $juezserial = $datos_usuario['serial'];
 
     $authmodel = new Auth;
     $isManager = $authmodel->userJoomlaManager($juezid);
@@ -1468,7 +1469,7 @@ $juzging->get('/asigmentsToJudge/penalty/{entry}', function(Request $request, $e
         cross join json_array_elements(panel.penaltyjudge) as each_penal
         cross join json_array_elements(each_penal->'params') as each_penalty
         left join sasa_match_core_parameters_penalty as penalties on penalties.id = (each_penalty->>'id')::int
-        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_penal->>'penalty')::int = '{$juezid}'
+        where panelcat.categoryid = '{$datos_entry_result->category_id}' and (each_penal->>'penalty') = '{$juezserial}'
         SQL;
     else:
         $datos_panel_penal_sql = <<<SQL
@@ -1500,6 +1501,9 @@ $juzging->get('/asigmentsToJudge/penalty/{entry}', function(Request $request, $e
     $findExistingQP = "select gc.data from sasa_match_core_score_penalty gc where entry = '{$participation}';";
 
     $rps = $database->query($findExistingQP);
+    if(is_null($rps)){
+        return new Response(json_encode(['ERROR INTERNO']), 500);
+    }
     $rps->setFetchMode(PDO::FETCH_ASSOC);
     $fetchPenal = $rps->fetch();
     
@@ -1596,6 +1600,7 @@ $juzging->get('/asigmentsToJudge/main/{entry}', function(Request $request, $entr
 
     $datos_usuario = Extended::getUserByEmail($validate->data->email);
     $juezid = (int) $datos_usuario['id'];
+    $juezserial = $datos_usuario['serial'];
 
     $participation = $entry;
 
@@ -1723,6 +1728,9 @@ $juzging->get('/asigmentsToJudge/main/{entry}', function(Request $request, $entr
     $findExistingQP = "select gc.data from sasa_match_core_score_penalty gc where entry = '{$participation}';";
 
     $result = $database->query($findexistintQ);
+    if(is_null($result)){
+        return new Response(json_encode('Hello'), 500);
+    }
     $result->setFetchMode(PDO::FETCH_ASSOC);
     $fetch = $result->fetch();
     
@@ -1755,6 +1763,9 @@ $juzging->get('/asigmentsToJudge/main/{entry}', function(Request $request, $entr
     }
 
     $rps = $database->query($findExistingQP);
+    if(is_null($rps)){
+        return new Response(json_encode(['Error']), 500);
+    }
     $rps->setFetchMode(PDO::FETCH_ASSOC);
     $fetchPenal = $rps->fetch();
 
@@ -1824,6 +1835,9 @@ $juzging->mount('/claims', function($claims) use($database, $dbo) {
         }
         $sqlpreview = "SELECT * FROM sasa_match_core_modules_participations_messages  WHERE entryid = '{$data->entryid}' AND parametro = '{$data->parametro}'";
         $findExisting = $database->query($sqlpreview);
+        if(is_null($findExisting)){
+            return new Response(json_encode(['Error']), 500);
+        }
         $findExisting->setFetchMode(PDO::FETCH_ASSOC);
         $findExistingFetch = $findExisting->fetch();
         if($findExistingFetch){
@@ -1856,6 +1870,9 @@ $juzging->mount('/claims', function($claims) use($database, $dbo) {
         }
         $sqlpreview = "SELECT * FROM sasa_match_core_modules_participations_messages  WHERE entryid = '{$data->entryid}' AND parametro = '{$data->parametro}'";
         $findExisting = $database->query($sqlpreview);
+        if(is_null($findExisting)){
+            return new Response(json_encode(['error']), 500);
+        }
         $findExisting->setFetchMode(PDO::FETCH_ASSOC);
         $findExistingFetch = $findExisting->fetch();
         if($findExistingFetch){

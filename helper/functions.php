@@ -23,9 +23,12 @@ function get_event_by_entry($entry){
     SELECT event_id from sasa_match_modules_participations where id = '{$entry}';
     SQL;
     $rs = $database->query($query);
-    $rs->setFetchMode(\PDO::FETCH_ASSOC);
-    $rsfetch = $rs->fetch();
-
+    $rsfetch = array();
+    if(!is_null($rs)){
+        $rs->setFetchMode(\PDO::FETCH_ASSOC);
+        $rsfetch = $rs->fetch();
+    }
+    
     return $rsfetch;
 }
 
@@ -401,8 +404,6 @@ function loopGadget($termino, $table='',$ciclos=0){
         $retorno = array();
 
         $quienSoy = ThatIAm($serial, $id);
-
-        var_dump($quienSoy);
 
         if(count($quienSoy['general']) > 0){
             $catsBySerialUserGeneral = <<<SQL

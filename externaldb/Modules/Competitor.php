@@ -155,7 +155,8 @@ $competitor->post('/create', function() use ($database){
     }
     
     return new Response(json_encode(["Saved"]), 200);
-} );
+} ); 
+
 
 
 $competitor->post('/update', function() use ($database){
@@ -166,11 +167,11 @@ $competitor->post('/update', function() use ($database){
     }
 
     $lista = array_map(function($po){
-        return str_replace('"', "'", json_encode($po));
+        return json_encode($po);
     }, $data->managers);
 
     $update = array(
-        "manager" => Medoo::raw("ARRAY[".implode("','", $lista)."]"),
+        "manager" => '{'.implode(",", $lista).'}',
         "type"     => intval($data->type),
         "data"     => json_encode($data->data)
     );
