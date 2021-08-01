@@ -2,6 +2,8 @@
     "require": {
         "silex/silex": "~2.0",
         "hallboav/silex-jwt-security": "^1.1",
-        "firebase/php-jwt": "^5.3"
+        "firebase/php-jwt": "^5.4",
+        "catfan/medoo": "^2.1",
+        "jdesrosiers/silex-cors-provider": "~1.0"
     }
 }
